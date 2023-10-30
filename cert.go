@@ -25,6 +25,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
+	"sm2"
 	"strconv"
 	"strings"
 	"time"
@@ -166,6 +167,9 @@ func (m *mkcert) printHosts(hosts []string) {
 func (m *mkcert) generateKey(rootCA bool) (crypto.PrivateKey, error) {
 	if m.ecdsa {
 		return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	}
+	if m.sm2 {
+		return sm2.GenerateKey()
 	}
 	if rootCA {
 		return rsa.GenerateKey(rand.Reader, 3072)

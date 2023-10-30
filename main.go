@@ -57,6 +57,9 @@ const advancedUsage = `Advanced options:
 	-ecdsa
 	    Generate a certificate with an ECDSA key.
 
+	-sm2
+	    Generate a certificate with an SM2 key.
+
 	-pkcs12
 	    Generate a ".p12" PKCS #12 file, also know as a ".pfx" file,
 	    containing certificate and key for legacy applications.
@@ -95,6 +98,7 @@ func main() {
 		uninstallFlag = flag.Bool("uninstall", false, "")
 		pkcs12Flag    = flag.Bool("pkcs12", false, "")
 		ecdsaFlag     = flag.Bool("ecdsa", false, "")
+		sm2Flag       = flag.Bool("sm2", false, "")
 		clientFlag    = flag.Bool("client", false, "")
 		helpFlag      = flag.Bool("help", false, "")
 		carootFlag    = flag.Bool("CAROOT", false, "")
@@ -136,15 +140,22 @@ func main() {
 	if *installFlag && *uninstallFlag {
 		log.Fatalln("ERROR: you can't set -install and -uninstall at the same time")
 	}
-	if *csrFlag != "" && (*pkcs12Flag || *ecdsaFlag || *clientFlag) {
+	if *csrFlag != "" && (*pkcs12Flag || *ecdsaFlag || *sm2Flag || *clientFlag) {
 		log.Fatalln("ERROR: can only combine -csr with -install and -cert-file")
 	}
 	if *csrFlag != "" && flag.NArg() != 0 {
 		log.Fatalln("ERROR: can't specify extra arguments when using -csr")
 	}
+
+	var type_is_conflicted bool = *ecdsaFlag == *sm2Flag
+
+	if type_is_conflicted {
+		log.Fatalln("ERROR: can't specify both -ecdsa and -sm2")
+	}
+
 	(&mkcert{
 		installMode: *installFlag, uninstallMode: *uninstallFlag, csrPath: *csrFlag,
-		pkcs12: *pkcs12Flag, ecdsa: *ecdsaFlag, client: *clientFlag,
+		pkcs12: *pkcs12Flag, ecdsa: *ecdsaFlag, sm2: *sm2Flag, client: *clientFlag,
 		certFile: *certFileFlag, keyFile: *keyFileFlag, p12File: *p12FileFlag,
 	}).Run(flag.Args())
 }
@@ -154,7 +165,7 @@ const rootKeyName = "rootCA-key.pem"
 
 type mkcert struct {
 	installMode, uninstallMode bool
-	pkcs12, ecdsa, client      bool
+	pkcs12, ecdsa, sm2, client bool
 	keyFile, certFile, p12File string
 	csrPath                    string
 
